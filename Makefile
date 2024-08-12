@@ -1,6 +1,7 @@
-CC=riscv64-buildroot-linux-gnu-gcc
+#CC=riscv64-buildroot-linux-gnu-gcc
+CC=gcc
 CFLAGS=-Wall -O2 -DRUN_IN_USERSPACE
-LDFLAGS=-lm
+LDFLAGS=-lm -static
 TARGET=latmem
 
 all: $(TARGET)
@@ -9,7 +10,7 @@ all: $(TARGET)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 latmem: latmem.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 clean:
 	@echo $(PATH)

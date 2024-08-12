@@ -59,9 +59,9 @@ uintptr_t *bigarray;
 int main(int argc, char ** argv) {
   long test_size;
 
-  if ( argc < 2 ) {
-	  printf
-  }
+//  if ( argc < 2 ) {
+//	  printf
+//  }
 
 #ifndef RUN_IN_USERSPACE
   long ways = ccache_ways(CCACHE_CTRL_ADDR);
