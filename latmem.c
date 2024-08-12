@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdatomic.h>
 #include <string.h>
 #include <stdio.h>
@@ -71,8 +72,13 @@ int main(int argc, char ** argv) {
   /* FIXME: There's probably a correct way to do this. */
   long ways = 16;
 #endif
+
+#ifdef DEVMEM
   int fd = open("/dev/mem", O_RDWR);
-  bigarray = mmap(0, TEST_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0x280000000UL);
+  bigarray = mmap(0, TEST_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0x10000000UL);
+#else
+  bigarray = malloc(TEST_SIZE);
+#endif
 
   for (test_size = STRIDE; test_size <= TEST_SIZE; test_size <<= 1) {
     long i, j, n, delta;
