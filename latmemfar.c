@@ -60,11 +60,16 @@ uintptr_t *bigarray;
 int main(int argc, char ** argv) {
   long test_size;
   long test_range = TEST_SIZE;
+  long unsigned offset = 0x100000000UL;
 
   if ( argc < 2 ) {
-	  printf("Usage: %s [MAX Test Size in kB: default=16384 (=16MB)]\n", argv[0]);
-  } else {
-	  test_range = atol(argv[1]) * 1024;
+	  printf("Usage: %s [offset, default=0x100000000] [MAX Test Size in kB: ex. 16384 (=16MB)]\n", argv[0]);
+  } 
+  if ( argc >= 2 ) {
+	offset = strtoll(argv[1], NULL, 0);
+  }
+  if ( argc >= 3 ) {
+	  test_range = atol(argv[2]) * 1024;
   }
 
 #ifndef RUN_IN_USERSPACE
@@ -77,8 +82,8 @@ int main(int argc, char ** argv) {
   long ways = 4;
 #endif
 
-  //Allocate local memory
-  bigarray = aligned_alloc(4096, test_range);
+  int fd = open("/dev/mem", O_RDWR);
+  bigarray = mmap(0, test_range, PROT_READ|PROT_WRITE, MAP_SHARED, fd, offset);
 
   for (test_size = STRIDE; test_size <= test_range; test_size <<= 1) {
     long i, j, n, delta;
@@ -123,7 +128,8 @@ int main(int argc, char ** argv) {
     printf("%ld %.3lf %.3lf %ld\n", test_size, mean, sqrt(var), n);
   }
 
-  free(bigarray);
+  //unmap
+  munmap(bigarray, test_range);
 
   // Test successful
   return 0;
