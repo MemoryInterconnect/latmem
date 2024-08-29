@@ -35,6 +35,7 @@ static uintptr_t rdcycle()
   return out;
 }
 
+#if 0
 uintptr_t *chase(uintptr_t *x, long* cycles) {
   uintptr_t start = rdcycle();
   asm volatile("" ::: "memory");
@@ -44,6 +45,26 @@ uintptr_t *chase(uintptr_t *x, long* cycles) {
   *cycles = end - start;
   return out;
 }
+#else
+uintptr_t *chase(uintptr_t *x, long* cycles) {
+  int i;
+  uintptr_t * val = x;
+
+  uintptr_t start = rdcycle();
+  asm volatile("" ::: "memory");
+
+  for(i=0; i<CHASE_STEPS; i++) {
+	printf("%p\n", val);
+	val = (uintptr_t*)*val;
+  }
+  uintptr_t* out = val;
+//  uintptr_t* out = CHASE1024(x);
+  asm volatile("" ::: "memory");
+  uintptr_t end = rdcycle();
+  *cycles = end - start;
+  return out;
+}
+#endif
 
 #ifndef TEST_SIZE
 #define TEST_SIZE (16*1024*1024)
