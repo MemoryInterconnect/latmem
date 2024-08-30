@@ -54,7 +54,7 @@ uintptr_t *chase(uintptr_t *x, long* cycles) {
   asm volatile("" ::: "memory");
 
   for(i=0; i<CHASE_STEPS; i++) {
-	printf("%p\n", val);
+	printf("\r%p", val);
 	val = (uintptr_t*)*val;
   }
   uintptr_t* out = val;
