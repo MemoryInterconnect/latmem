@@ -33,7 +33,7 @@ latmem_write: latmem_write.o
 latmemfar: latmemfar.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
-latmemfair_write: latmemfar_write.o
+latmemfar_write: latmemfar_write.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 #latmemfar_stride: latmemfar_stride.o
