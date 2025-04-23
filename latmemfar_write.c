@@ -101,8 +101,8 @@ int main(int argc, char ** argv) {
 #ifndef RANDOM
       j = (i + stride) & (test_size-1);
 #endif
-      printf("Write at 0x%08lx\n", i);
-      usleep(400000);
+//      printf("Write at 0x%08lx\n", i);
+//      usleep(400000);
       bigarray[i/sizeof(uintptr_t)] = (uintptr_t)&bigarray[j/sizeof(uintptr_t)];
       i = j;
     } while (i != 0);
@@ -132,7 +132,39 @@ int main(int argc, char ** argv) {
     // We also need to divide by CHASE_STEPS to scale the result.
     double varDelta = (1.0*sum2 - 1.0*sum*sum/n) / (n-1);
     double var = varDelta / sqrt(CHASE_STEPS);
-    printf("%ld %.3lf %.3lf %ld\n", test_size, mean, sqrt(var), n);
+
+    sum = 0;
+    sum2 = 0;
+    x = &bigarray[0];
+
+    for (i = 0; i < n; ++i) {
+
+	    int steps = CHASE_STEPS;
+	    int k=0;
+            uintptr_t start = rdcycle();
+            asm volatile("" ::: "memory");
+	    do {
+		    bigarray[k/sizeof(uintptr_t)] = (uintptr_t)x;
+		    k = (k + stride) & (test_size-1);
+	    } while ( --steps > 0 );
+            asm volatile("" ::: "memory");
+	    uintptr_t end = rdcycle();
+
+            delta = end - start;
+
+      	    sum += delta;
+	    sum2 += delta*delta;
+    }
+
+    double mean_write = sum / (1.0*n*CHASE_STEPS);
+    // This is tricky. The sum2 and sum are actually measuring the random variable
+    // which is a CHASE_STEPS* sum of the real random variable. To find the variance
+    // of the underlying distribution, we need to multiply by sqrt(CHASE_STEPS).
+    // We also need to divide by CHASE_STEPS to scale the result.
+    double varDelta_write = (1.0*sum2 - 1.0*sum*sum/n) / (n-1);
+    double var_write = varDelta_write / sqrt(CHASE_STEPS);
+
+    printf("%ld %.3lf %.3lf write %.3lf %.3lf %ld\n", test_size, mean, sqrt(var), mean_write, sqrt(var_write), n);
   }
 
   //unmap
