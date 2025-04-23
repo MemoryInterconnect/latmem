@@ -60,11 +60,11 @@ uintptr_t *bigarray;
 int main(int argc, char ** argv) {
   long test_size;
   long test_range = TEST_SIZE;
-  long unsigned offset = 0x100000000UL;
+  long unsigned offset = 0x200000000UL;
   int stride = STRIDE;
 
   if ( argc < 2 ) {
-	  printf("Usage: %s [offset, default=0x100000000] [MAX Test Size in kB: ex. 16384 (=16MB)] [stride (default=4096)]\n", argv[0]);
+	  printf("Usage: %s [offset, default=0x200000000] [MAX Test Size in kB: ex. 16384 (=16MB)] [stride (default=4096)]\n", argv[0]);
   } 
   if ( argc >= 2 ) {
 	offset = strtoll(argv[1], NULL, 0);

@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <unistd.h>
 #ifndef RUN_IN_USERSPACE
 #include <sifive/devices/ccache.h>
 #include <sifive/platform.h>
@@ -61,20 +60,11 @@ uintptr_t *bigarray;
 int main(int argc, char ** argv) {
   long test_size;
   long test_range = TEST_SIZE;
-  long unsigned offset = 0x200000000UL;
-  int stride = STRIDE;
 
   if ( argc < 2 ) {
-	  printf("Usage: %s [offset, default=0x200000000] [MAX Test Size in kB: ex. 16384 (=16MB)] [stride (default=4096)]\n", argv[0]);
-  } 
-  if ( argc >= 2 ) {
-	offset = strtoll(argv[1], NULL, 0);
-  }
-  if ( argc >= 3 ) {
-	  test_range = atol(argv[2]) * 1024;
-  }
-  if (argc >= 4 ) {
-	  stride = atoi(argv[3]);
+	  printf("Usage: %s [MAX Test Size in kB: default=16384 (=16MB)]\n", argv[0]);
+  } else {
+	  test_range = atol(argv[1]) * 1024;
   }
 
 #ifndef RUN_IN_USERSPACE
@@ -87,10 +77,10 @@ int main(int argc, char ** argv) {
   long ways = 4;
 #endif
 
-  int fd = open("/dev/mem", O_RDWR);
-  bigarray = mmap(0, test_range, PROT_READ|PROT_WRITE, MAP_SHARED, fd, offset);
+  //Allocate local memory
+  bigarray = aligned_alloc(4096, test_range);
 
-  for (test_size = stride; test_size <= test_range; test_size <<= 1) {
+  for (test_size = STRIDE; test_size <= test_range; test_size <<= 1) {
     long i, j, n, delta;
     long sum, sum2;
     uintptr_t *x = &bigarray[0];
@@ -99,10 +89,8 @@ int main(int argc, char ** argv) {
     i = 0;
     do {
 #ifndef RANDOM
-      j = (i + stride) & (test_size-1);
+      j = (i + STRIDE) & (test_size-1);
 #endif
-      printf("Write at 0x%08lx\n", i);
-      usleep(400000);
       bigarray[i/sizeof(uintptr_t)] = (uintptr_t)&bigarray[j/sizeof(uintptr_t)];
       i = j;
     } while (i != 0);
@@ -110,7 +98,7 @@ int main(int argc, char ** argv) {
     // We need to chase the point test_size/STRIDE steps to exercise the loop.
     // Each invocation of chase performs CHASE_STEPS, so round-up the calls.
     // To warm a cache with random replacement, you need to walk it 'ways' times.
-    n = (((test_size / stride) * ways + (CHASE_STEPS-1)) / CHASE_STEPS);
+    n = (((test_size / STRIDE) * ways + (CHASE_STEPS-1)) / CHASE_STEPS);
     if (n < 5) n = 5; // enough to compute variance to within 50% = 1/sqrt(n-1)
 
     // Warm the cache test
@@ -135,10 +123,8 @@ int main(int argc, char ** argv) {
     printf("%ld %.3lf %.3lf %ld\n", test_size, mean, sqrt(var), n);
   }
 
-  //unmap
-  munmap(bigarray, test_range);
+  free(bigarray);
 
-  close(fd);
   // Test successful
   return 0;
 }
