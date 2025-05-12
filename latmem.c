@@ -14,6 +14,9 @@
 #include <fcntl.h>
 #endif
 
+//for gettimeofday
+#include <sys/time.h>
+
 // Pointer chasing macros to force the loop to be unwound
 #define CHASE1(x) ((uintptr_t *)*x)
 #define CHASE2(x) CHASE1(CHASE1(x))
@@ -27,13 +30,25 @@
 #define CHASE512(x) CHASE256(CHASE256(x))
 #define CHASE1024(x) CHASE512(CHASE512(x))
 #define CHASE_STEPS 1024
-
+#if 0
 static uintptr_t rdcycle()
 {
   uintptr_t out;
   __asm__ __volatile__ ("rdcycle %0" : "=r"(out));
   return out;
 }
+#else
+#define CLOCK_PER_USEC 100 //100MHz
+static inline uintptr_t rdcycle()
+{
+	struct timeval tp;
+	struct timezone tzp;
+	double usec;
+	gettimeofday(&tp,&tzp);
+	usec = tp.tv_sec*1000000 + tp.tv_usec;
+	return usec * CLOCK_PER_USEC;
+}
+#endif
 
 uintptr_t *chase(uintptr_t *x, long* cycles) {
   uintptr_t start = rdcycle();
