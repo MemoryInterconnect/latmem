@@ -75,12 +75,15 @@ uintptr_t *bigarray;
 int main(int argc, char ** argv) {
   long test_size;
   long test_range = TEST_SIZE;
+  int stride = STRIDE;
 
   if ( argc < 2 ) {
-	  printf("Usage: %s [MAX Test Size in kB: default=16384 (=16MB)]\n", argv[0]);
+	  printf("Usage: %s [MAX Test Size in kB: default=16384 (=16MB)] [stride: default=4096]\n", argv[0]);
   } else {
 	  test_range = atol(argv[1]) * 1024;
   }
+
+  if (argc >= 3 ) stride = atoi(argv[2]);
 
 #ifndef RUN_IN_USERSPACE
   long ways = ccache_ways(CCACHE_CTRL_ADDR);
@@ -95,7 +98,7 @@ int main(int argc, char ** argv) {
   //Allocate local memory
   bigarray = aligned_alloc(4096, test_range);
 
-  for (test_size = STRIDE; test_size <= test_range; test_size <<= 1) {
+  for (test_size = stride; test_size <= test_range; test_size <<= 1) {
     long i, j, n, delta;
     long sum, sum2;
     uintptr_t *x = &bigarray[0];
@@ -104,7 +107,7 @@ int main(int argc, char ** argv) {
     i = 0;
     do {
 #ifndef RANDOM
-      j = (i + STRIDE) & (test_size-1);
+      j = (i + stride) & (test_size-1);
 #endif
       bigarray[i/sizeof(uintptr_t)] = (uintptr_t)&bigarray[j/sizeof(uintptr_t)];
       i = j;
@@ -113,7 +116,7 @@ int main(int argc, char ** argv) {
     // We need to chase the point test_size/STRIDE steps to exercise the loop.
     // Each invocation of chase performs CHASE_STEPS, so round-up the calls.
     // To warm a cache with random replacement, you need to walk it 'ways' times.
-    n = (((test_size / STRIDE) * ways + (CHASE_STEPS-1)) / CHASE_STEPS);
+    n = (((test_size / stride) * ways + (CHASE_STEPS-1)) / CHASE_STEPS);
     if (n < 5) n = 5; // enough to compute variance to within 50% = 1/sqrt(n-1)
 
     // Warm the cache test
